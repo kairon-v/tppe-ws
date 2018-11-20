@@ -1,5 +1,6 @@
 
 from django.db.utils import IntegrityError
+from django.db.models import Q
 
 from spyne.error import ResourceNotFoundError, ResourceAlreadyExistsError
 from spyne.model.primitive import Unicode, Integer
@@ -10,13 +11,16 @@ from spyne.application import Application
 from spyne.decorator import rpc
 from spyne.util.django import DjangoComplexModel
 
-from .models import User as UserModel
+from .models import Book as BookModel, User as UserModel
 
 
 class User(DjangoComplexModel):
     class Attributes(DjangoComplexModel.Attributes):
         django_model = UserModel
 
+class Book(DjangoComplexModel):
+    class Attributes(DjangoComplexModel.Attributes):
+        django_model = BookModel
 
 class UserService(ServiceBase):
     @rpc(_returns=Iterable(User))
@@ -40,8 +44,32 @@ class UserService(ServiceBase):
         except IntegrityError:
             raise ResourceAlreadyExistsError('User')
 
+class BookService(ServiceBase):
+    @rpc(_returns=Iterable(Book))
+    def book_listing(ctx):
+        try:
+            return BookModel.objects.all()
+        except BookModel.DoesNotExist:
+            raise ResourceNotFoundError('Book')
 
-app = Application([UserService],
+    @rpc(Unicode, Unicode, _returns=Book)
+    def get_book(ctx, title = None, isbn = None):
+        try:
+            return BookModel.objects.filter(Q(title=title) | Q(isbn=isbn)).first()
+        except BookModel.DoesNotExist:
+            raise ResourceNotFoundError('Book')
+
+    @rpc(Book, _returns=Book)
+    def create_book(ctx, book):
+        # TODO Verificar se o livro existe pelo ISBN, se existir, não criar.
+        # TODO criar um método mara incrementar ou decrementar o número de cópias de um livro.
+        try:
+            return BookModel.objects.create(**book.as_dict())
+        except IntegrityError:
+            raise ResourceAlreadyExistsError('Book')
+
+
+app = Application([UserService, BookService],
     'library.views',
     in_protocol=Soap11(validator='lxml'),
     out_protocol=Soap11(),
