@@ -70,7 +70,6 @@ class BookService(ServiceBase):
 
     @rpc(Book, _returns=Book)
     def create_book(ctx, book):
-        # TODO Verificar se o livro existe pelo ISBN, se existir, não criar.
         try:
             return BookModel.objects.create(**book.as_dict())
         except IntegrityError:

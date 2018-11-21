@@ -8,7 +8,7 @@ class User(models.Model):
 
 class Book(models.Model):
     title = models.CharField(max_length=255)
-    isbn = models.CharField(max_length=20)
+    isbn = models.CharField(unique=True, max_length=20)
     description = models.TextField()
     release_year = models.CharField(max_length=4)
     publisher = models.CharField(max_length=50)
