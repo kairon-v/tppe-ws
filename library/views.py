@@ -59,10 +59,18 @@ class BookService(ServiceBase):
         except BookModel.DoesNotExist:
             raise ResourceNotFoundError('Book')
 
+    @rpc(Unicode, Integer, _returns=Book)
+    def update_book_copies(ctx, isbn, copies):
+        try:
+            book = BookModel.objects.filter(isbn=isbn).first()
+            book.copies += copies
+            book.save()
+        except BookModel.DoesNotExist:
+            raise ResourceNotFoundError('Book')
+
     @rpc(Book, _returns=Book)
     def create_book(ctx, book):
         # TODO Verificar se o livro existe pelo ISBN, se existir, não criar.
-        # TODO criar um método mara incrementar ou decrementar o número de cópias de um livro.
         try:
             return BookModel.objects.create(**book.as_dict())
         except IntegrityError:
