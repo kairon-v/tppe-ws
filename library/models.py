@@ -13,3 +13,11 @@ class Book(models.Model):
     release_year = models.CharField(max_length=4)
     publisher = models.CharField(max_length=50)
     copies = models.IntegerField(default=0)
+
+class BookLoan(models.Model):
+	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='books')
+	book = models.ForeignKey(User, on_delete=models.CASCADE, related_name='users')
+	loan_date = models.DateField(auto_now=True)
+	days = models.IntegerField(default=0)
+	return_date = models.DateField(null=True)
+
