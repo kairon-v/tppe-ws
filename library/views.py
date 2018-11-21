@@ -11,7 +11,7 @@ from spyne.application import Application
 from spyne.decorator import rpc
 from spyne.util.django import DjangoComplexModel
 
-from .models import Book as BookModel, User as UserModel
+from .models import Book as BookModel, User as UserModel, BookLoan as BookLoanModel
 
 
 class User(DjangoComplexModel):
@@ -21,6 +21,10 @@ class User(DjangoComplexModel):
 class Book(DjangoComplexModel):
     class Attributes(DjangoComplexModel.Attributes):
         django_model = BookModel
+
+class BookLoan(DjangoComplexModel):
+    class Attributes(DjangoComplexModel.Attributes):
+        django_model = BookLoanModel
 
 class UserService(ServiceBase):
     @rpc(_returns=Iterable(User))
@@ -76,7 +80,15 @@ class BookService(ServiceBase):
             raise ResourceAlreadyExistsError('Book')
 
 
-app = Application([UserService, BookService],
+class BookLoanService(ServiceBase):
+    @rpc(_returns=Iterable(BookLoan))
+    def book_loan_listing(ctx):
+        try:
+            return BookModel.objects.all()
+        except BookModel.DoesNotExist:
+            raise ResourceNotFoundError('Book')
+
+app = Application([UserService, BookService, BookLoanService],
     'library.views',
     in_protocol=Soap11(validator='lxml'),
     out_protocol=Soap11(),
