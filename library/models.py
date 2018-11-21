@@ -15,8 +15,8 @@ class Book(models.Model):
     copies = models.IntegerField(default=0)
 
 class BookLoan(models.Model):
-	user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='books')
-	book = models.ForeignKey(User, on_delete=models.CASCADE, related_name='users')
+	user = models.ForeignKey(User, on_delete=models.CASCADE)
+	book = models.ForeignKey(Book, on_delete=models.CASCADE)
 	loan_date = models.DateField(auto_now=True)
 	days = models.IntegerField(default=0)
 	return_date = models.DateField(null=True)

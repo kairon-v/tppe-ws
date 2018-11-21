@@ -87,6 +87,33 @@ class BookLoanService(ServiceBase):
             return BookModel.objects.all()
         except BookModel.DoesNotExist:
             raise ResourceNotFoundError('Book')
+    
+    @rpc(Unicode, Unicode, Integer, _returns=BookLoan)
+    def create_book_loan(ctx, user_email, isbn, days):
+        try:
+            user = UserModel.objects.get(email=email)
+        except UserModel.DoesNotExist:
+            raise ResourceNotFoundError('User')
+        
+        try:
+            book = BookModel.objects.filter(isbn=isbn).first()
+        except BookModel.DoesNotExist:
+            raise ResourceNotFoundError('Book')
+        
+        rented = BookLoanModel.objects.filter(
+            user=user,
+            book=book,
+            return_date=None
+        )
+
+        if rented is not None:
+            raise ResourceAlreadyExistsError('BookLoan')
+
+        return BookLoanModel.objects.create(
+            user=user,
+            book=book,
+            days=days
+        )
 
 app = Application([UserService, BookService, BookLoanService],
     'library.views',
