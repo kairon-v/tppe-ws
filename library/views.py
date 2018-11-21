@@ -12,7 +12,7 @@ from spyne.decorator import rpc
 from spyne.util.django import DjangoComplexModel
 
 from .models import Book as BookModel, User as UserModel, BookLoan as BookLoanModel
-
+import datetime
 
 class User(DjangoComplexModel):
     class Attributes(DjangoComplexModel.Attributes):
@@ -91,7 +91,7 @@ class BookLoanService(ServiceBase):
     @rpc(Unicode, Unicode, Integer, _returns=BookLoan)
     def create_book_loan(ctx, user_email, isbn, days):
         try:
-            user = UserModel.objects.get(email=email)
+            user = UserModel.objects.get(email=user_email)
         except UserModel.DoesNotExist:
             raise ResourceNotFoundError('User')
         
@@ -99,13 +99,13 @@ class BookLoanService(ServiceBase):
             book = BookModel.objects.filter(isbn=isbn).first()
         except BookModel.DoesNotExist:
             raise ResourceNotFoundError('Book')
-        
         rented = BookLoanModel.objects.filter(
             user=user,
             book=book,
             return_date=None
-        )
+        ).last()
 
+        print(rented)
         if rented is not None:
             raise ResourceAlreadyExistsError('BookLoan')
 
@@ -114,6 +114,22 @@ class BookLoanService(ServiceBase):
             book=book,
             days=days
         )
+    
+    @rpc(Unicode, _returns=BookLoan)
+    def devolve_book_loan(ctx, isbn):
+        try:
+            book = BookModel.objects.filter(isbn=isbn).first()
+        except BookModel.DoesNotExist:
+            raise ResourceNotFoundError('Book')
+
+        book_loan = BookLoanModel.objects.filter(
+            book=book,
+            return_date=None
+        ).last()
+
+        book_loan.return_date = datetime.datetime.now()
+        book_loan.save()
+        return book_loan
 
 app = Application([UserService, BookService, BookLoanService],
     'library.views',
